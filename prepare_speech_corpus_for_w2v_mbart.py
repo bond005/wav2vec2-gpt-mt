@@ -43,15 +43,18 @@ def apply_g2p(source_text: str, epi: epitran.Epitran) -> str:
         )
     ))
     if len(words) == 0:
-        return '<s> </s>'
-    transcription = '<s>'
+        return '<sil>'
+    transcription = '<sil>'
     for cur_word in words:
         new_trans = epi.trans_list(cur_word)
         if len(new_trans) > 0:
             for cur_phone in new_trans:
                 if len(cur_phone.strip()) > 0:
                     transcription += (' ' + cur_phone.strip())
-    transcription += ' </s>'
+    transcription += ' <sil>'
+    set_of_phones = set(transcription.split())
+    if len(set_of_phones) < 2:
+        transcription = '<sil>'
     return transcription
 
 
@@ -153,8 +156,8 @@ def main():
                 annotation = batch["sentence"]
                 phonetic_transcription = apply_g2p(annotation, possible_languages[cur_lang])
                 if len(phonetic_transcription) < 3:
-                    assert phonetic_transcription == '<s> </s>', phonetic_transcription
-                    annotation = '<SIL>'
+                    assert phonetic_transcription == '<sil>', phonetic_transcription
+                    annotation = '<SILENCE>'
                 if (len(phonetic_transcription.split()) * 7) <= get_sound_frames_number(speech_array):
                     data_dir = os.path.join(dst_corpus_name, 'data')
                     if not os.path.isdir(data_dir):
@@ -170,7 +173,7 @@ def main():
                         phonetic_transcription,
                         cur_lang
                     ))
-                    if annotation != '<SIL>':
+                    if annotation != '<SILENCE>':
                         set_of_validation_texts.add(' '.join(annotation.strip().split()))
                     counter += 1
         del audio_dataset
@@ -196,8 +199,8 @@ def main():
                 annotation = batch["sentence"]
                 phonetic_transcription = apply_g2p(annotation, possible_languages[cur_lang])
                 if len(phonetic_transcription) < 3:
-                    assert phonetic_transcription == '<s> </s>', phonetic_transcription
-                    annotation = '<SIL>'
+                    assert phonetic_transcription == '<sil>', phonetic_transcription
+                    annotation = '<SILENCE>'
                 if (len(phonetic_transcription.split()) * 7) <= get_sound_frames_number(speech_array):
                     data_dir = os.path.join(dst_corpus_name, 'data')
                     if not os.path.isdir(data_dir):
@@ -213,7 +216,7 @@ def main():
                         phonetic_transcription,
                         cur_lang
                     ))
-                    if annotation != '<SIL>':
+                    if annotation != '<SILENCE>':
                         set_of_test_texts.add(' '.join(annotation.strip().split()))
                     counter += 1
         del audio_dataset
@@ -239,8 +242,8 @@ def main():
                 annotation = batch["sentence"]
                 phonetic_transcription = apply_g2p(annotation, possible_languages[cur_lang])
                 if len(phonetic_transcription) < 3:
-                    assert phonetic_transcription == '<s> </s>', phonetic_transcription
-                    annotation = '<SIL>'
+                    assert phonetic_transcription == '<sil>', phonetic_transcription
+                    annotation = '<SILENCE>'
                 if (len(phonetic_transcription.split()) * 7) <= get_sound_frames_number(speech_array):
                     data_dir = os.path.join(dst_corpus_name, 'data')
                     if not os.path.isdir(data_dir):
@@ -249,7 +252,7 @@ def main():
                     if not os.path.isdir(train_dir):
                         os.mkdir(train_dir)
                     if ((annotation not in set_of_validation_texts) and (annotation not in set_of_test_texts)) or \
-                            (annotation == '<SIL>'):
+                            (annotation == '<SILENCE>'):
                         sound_fname = os.path.join(dst_corpus_name, 'data', 'train', '{0:>06}.wav'.format(counter))
                         save_sound(speech_array=speech_array, fs=sampling_rate, fname=sound_fname)
                         metadata.append((
@@ -281,8 +284,8 @@ def main():
             save_sound(speech_array=cur_sound, fs=TARGET_SAMPLING_RATE, fname=sound_fname)
             metadata.append((
                 'data/train/' + os.path.basename(sound_fname),
-                '<SIL>',
-                '<s> </s>',
+                '<SILENCE>',
+                '<sil>',
                 ''
             ))
             counter += 1
@@ -291,8 +294,8 @@ def main():
             save_sound(speech_array=cur_sound, fs=TARGET_SAMPLING_RATE, fname=sound_fname)
             metadata.append((
                 'data/validation/' + os.path.basename(sound_fname),
-                '<SIL>',
-                '<s> </s>',
+                '<SILENCE>',
+                '<sil>',
                 ''
             ))
             counter += 1
@@ -301,8 +304,8 @@ def main():
             save_sound(speech_array=cur_sound, fs=TARGET_SAMPLING_RATE, fname=sound_fname)
             metadata.append((
                 'data/test/' + os.path.basename(sound_fname),
-                '<SIL>',
-                '<s> </s>',
+                '<SILENCE>',
+                '<sil>',
                 ''
             ))
             counter += 1
